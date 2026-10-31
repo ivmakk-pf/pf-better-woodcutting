@@ -4,14 +4,13 @@ Feel like a true lumberjack: fell a tree and its Wood lands straight in your bac
 
 Some swings also do nothing when you stand at the edge of reach or right against the tree. This mod gives those swings their hit, and it picks up the logs of each tree you fell.
 
+I love archery and chopping trees in games, and in Permafrost arrows need a lot of Wood. But chopping here felt bad: a swing only hits when you stand almost perfectly in front of the tree, with the distance right to the millimeter and the angle right to the degree. And on the mountain slopes the logs roll away, so I chased each one down the hill. Every Wood restock felt like a punishment. This mod is my fix for that.
+
 ## Features
 
 - **Log pickup**: when a tree you cut breaks into logs, they go straight into your inventory, if you stand within 15 m of the stump. You get the same Wood as by hand. If the inventory is full, the rest stays on the ground.
 - **Nearby logs**: pick up one log by hand, and the other logs within 5 m come with it.
 - **Hit assist**: your axe swings now deal damage even from the edge of reach or right against the tree. Each swing still gives one normal hit.
-## Why I made it
-
-I love archery and chopping trees in games, and in Permafrost arrows need a lot of Wood. But chopping here felt bad: a swing only hits when you stand almost perfectly in front of the tree, with the distance right to the millimeter and the angle right to the degree. And on the mountain slopes the logs roll away, so I chased each one down the hill. Every Wood restock felt like a punishment. This mod is my fix for that.
 
 ## Save safety
 
@@ -29,9 +28,15 @@ Tested only in single player. In co-op, only the host needs the mod: the log pic
 ## Requirements
 
 - Permafrost (Early Access), the update of 30 October 2026 or later.
-- [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases) 3.0.1 or later.
+- [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases) 3.0.1 or later. Vortex installs it for you.
 
 ## Installation
+
+**Vortex (recommended):**
+
+1. Click **Vortex** at the top of the [Nexus page](https://www.nexusmods.com/permafrost/mods/39) *(needs the [Permafrost Vortex Extension](https://www.nexusmods.com/site/mods/2466), which also installs UE4SS)*.
+
+**Manual installation:**
 
 1. Install [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases).
 2. Extract this mod's zip into the game folder (the folder with Permafrost.exe). The mod lands in Permafrost\Binaries\Win64\ue4ss\Mods. Full path example:
@@ -39,7 +44,7 @@ Tested only in single player. In co-op, only the host needs the mod: the log pic
 
 ## Uninstall
 
-Delete the `BetterWoodcutting` folder from the `ue4ss\Mods` folder.
+In Vortex, remove the mod on the Mods page. After a manual install, delete the `BetterWoodcutting` folder from the `ue4ss\Mods` folder.
 
 ## Configuration
 
