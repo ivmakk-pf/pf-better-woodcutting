@@ -22,7 +22,7 @@ Tested only in single player. In co-op, only the host needs the mod: the log pic
 
 ## Works well with
 
-- [Custom Mining & Woodcutting Yield](https://www.nexusmods.com/permafrost/mods/12): changes how much Wood each log gives. The log pickup gives you that changed amount.
+- [Custom Mining Woodcutting Yield](https://www.nexusmods.com/permafrost/mods/12): changes how much Wood each log gives. The log pickup gives you that changed amount.
 - [Custom Stack Size](https://www.nexusmods.com/permafrost/mods/5): bigger stacks. With this mod you collect Wood much faster, and a full inventory leaves the rest on the ground, so more room in each stack helps.
 
 ## Requirements
