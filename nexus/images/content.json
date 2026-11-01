@@ -1,0 +1,29 @@
+{
+  "nexus": {
+    "name": "Better Woodcutting",
+    "author": "ivmakk0",
+    "category": "Gameplay",
+    "summary": "Feel like a true lumberjack: fell a tree and its Wood lands straight in your backpack."
+  },
+  "thumbnail": {
+    "out": "00-thumbnail.jpg",
+    "screenshot": "tree-prompt.jpg",
+    "crop": [167, 470, 2540, 1429],
+    "layout": { "left": 310 },
+    "titleIcon": { "icon": "UI/HUD/Textures/Icon_Axe_01", "size": 240 },
+    "title": [{ "text": "Better" }, { "text": "Woodcutting", "accent": true }],
+    "rows": [
+      {
+        "icon": "Assets/Items/Wearables/_Common/Backpacks/SurvivorBackpack/T_SurvivorBackpack_Icon",
+        "iconSize": 112,
+        "badge": { "icon": "Assets/Items/Resources/Wood/T_WoodResource_Icon", "size": 74 },
+        "caption": [{ "text": "Fallen trees go straight" }, [{ "text": "into your " }, { "text": "backpack", "accent": true }]]
+      },
+      {
+        "icon": "UI/Journal/SkillProgression/Assets/T_Skill_Axes_Icon",
+        "iconSize": 96,
+        "caption": [{ "text": "Every chop" }, { "text": "matters", "accent": true }]
+      }
+    ]
+  }
+}
