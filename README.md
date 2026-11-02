@@ -30,11 +30,11 @@ Tested only in single player. In co-op, only the host needs the mod: the log pic
 ## Requirements
 
 - Permafrost (Early Access), the update of 30 October 2026 or later.
-- [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/experimental-latest), the experimental build. The mod is tested with it, not with the older 3.0.1 release.
+- [UE4SS for Permafrost](https://www.nexusmods.com/permafrost/mods/42), the UE4SS build that the mod is tested with.
 
 ## Installation
 
-1. Install UE4SS, if you do not have it yet: on the [UE4SS experimental page](https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/experimental-latest), download the UE4SS zip (for example `UE4SS_v3.0.1-1196-g236adf26.zip`). Extract it into the `Permafrost\Binaries\Win64` folder inside the game folder.
+1. Install [UE4SS for Permafrost](https://www.nexusmods.com/permafrost/mods/42).
 2. Extract this mod's zip into the game folder (the folder with Permafrost.exe). The mod lands in Permafrost\Binaries\Win64\ue4ss\Mods. Full path example:
    `C:\Program Files (x86)\Steam\steamapps\common\Permafrost\Permafrost\Binaries\Win64\ue4ss\Mods\BetterWoodcutting`
 
