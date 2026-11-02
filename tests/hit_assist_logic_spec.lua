@@ -254,3 +254,17 @@ describe("hit_assist_logic.needsAssist", function()
         assert_eq(logic.assistAt(endedSwing("tree", 10)), 10 + logic.GRACE_S)
     end)
 end)
+
+describe("hit_assist_logic.treeDown", function()
+    it("is true for a tree that the game marked as scavenged (it falls and takes no damage)", function()
+        assert_eq(logic.treeDown(true), true)
+    end)
+
+    it("is true when the read failed, so the swing stays vanilla", function()
+        assert_eq(logic.treeDown(nil), true)
+    end)
+
+    it("is false for a standing tree", function()
+        assert_eq(logic.treeDown(false), false)
+    end)
+end)

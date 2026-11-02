@@ -3,7 +3,9 @@
 local M = {}
 
 -- The game's own hit lands 0.59 to 0.65 s after SurfaceTrace, also the late hit of a short swing (whose
--- montage plays on after the ability ends): a swing is checked this long after its start.
+-- montage plays on after the ability ends): a swing is checked this long after its start. The hit
+-- window of the chop montage AM_Axe_03_ChopSide is 0.50-0.76 s (game/data). The end of the weapon's
+-- hit window (SGK MeleeCollisionToggle false) is no trigger: ResetSwing and the ability end also fire it.
 M.GRACE_S = 0.8
 -- The hold-to-chop loop hits a tree every 1.14 to 1.16 s: an assist never comes sooner than this after
 -- the tree's last damage, so fast short clicks cannot chop faster than holding the button.
@@ -133,6 +135,14 @@ function M.needsAssist(swing, lastDamageAt, latestN, now)
     if lastDamageAt == nil then return true end
     if now and now - lastDamageAt < M.MIN_HIT_INTERVAL_S then return false end
     return lastDamageAt < swing.startedAt
+end
+
+-- Whether a tree is down: the game's bScavenged flag, set when the tree breaks (it then falls and
+-- takes no damage). A failed read (nil) counts as down, so the swing stays vanilla.
+---@param scavenged boolean?
+---@return boolean
+function M.treeDown(scavenged)
+    return scavenged ~= false
 end
 
 ---@param swing Swing

@@ -74,3 +74,45 @@ describe("log_pickup_logic.pickupResult", function()
         assert_eq(logic.pickupResult({ valid = true, collected = false }), "shown again")
     end)
 end)
+
+describe("log_pickup_logic.logsOfTree", function()
+    it("keeps the logs whose owner is the tree, in their order", function()
+        local entries = { { log = "a", ownerKey = 7 }, { log = "b", ownerKey = 9 }, { log = "c", ownerKey = 7 } }
+        local kept, dropped = logic.logsOfTree(entries, 7)
+        assert_eq(#kept, 2)
+        assert_eq(kept[1], "a")
+        assert_eq(kept[2], "c")
+        assert_eq(dropped, 1)
+    end)
+
+    it("drops a log with no owner (a log loaded from a save)", function()
+        local kept, dropped = logic.logsOfTree({ { log = "a" } }, 7)
+        assert_eq(#kept, 0)
+        assert_eq(dropped, 1)
+    end)
+
+    it("keeps nothing when the tree key is unknown", function()
+        local kept, dropped = logic.logsOfTree({ { log = "a", ownerKey = 7 } }, nil)
+        assert_eq(#kept, 0)
+        assert_eq(dropped, 1)
+    end)
+end)
+
+describe("log_pickup_logic.logsInRange", function()
+    it("keeps the logs within the range and drops the picked log by its key", function()
+        local logs = {
+            { key = 1, pos = at(100) },
+            { key = 2, pos = at(501) },
+            { key = 3, pos = at(0, 500) },
+            { key = 4, pos = at(200) },
+        }
+        local kept = logic.logsInRange(at(0), 4, logs, 5)
+        assert_eq(#kept, 2)
+        assert_eq(kept[1].key, 1)
+        assert_eq(kept[2].key, 3)
+    end)
+
+    it("returns nothing for a range of 0", function()
+        assert_eq(#logic.logsInRange(at(0), nil, { { key = 1, pos = at(0) } }, 0), 0)
+    end)
+end)

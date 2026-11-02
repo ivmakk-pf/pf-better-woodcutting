@@ -4,6 +4,17 @@ All notable changes to this mod are documented in this file. The format is based
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-02
+
+### Fixed
+
+- Hit assist works from your first tree swing after you load a save, also when your first swings hit a rock or nothing.
+- When two trees fall at almost the same moment, the logs of each tree go to the player who cut that tree.
+
+### Changed
+
+- Less work while a tree falls and when you pick up a log by hand.
+
 ## [1.0.0] - 2026-10-31
 
 ### Added
