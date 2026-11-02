@@ -1,3 +1,5 @@
+![version](https://img.shields.io/badge/version-1.0.1-blue)
+
 # Better Woodcutting
 
 Feel like a true lumberjack: fell a tree and its Wood lands straight in your backpack.

@@ -19,8 +19,7 @@ local ABILITY_CLASS = "GA_Attack_MeleePrimary_C"
 local WEAPON_CLASS = "BP_MasterMeleeWeapon_C"
 local TREE_CLASS = "BP_ScavengeableTree_C"
 local FACING_MAX_DEG = 60 -- the SurfaceTrace tree counts as the target only within this angle
-local TRACE_LENGTH_CM = 300
-local FALL_KEEP_S = 30 -- a felled tree falls and breaks within a few seconds
+local TRACE_LENGTH_CM = 300 -- the prompt range: InteractionDistance of BP_PlayerInventory
 
 ---@param ctx FeatureContext
 function M.install(ctx)
@@ -59,7 +58,7 @@ function M.install(ctx)
 
     -- Set in the arming section below; the swing hook uses them to arm a class that loaded late.
     local allArmed ---@type fun(): boolean
-    local armAll ---@type fun(reason: string)
+    local armAll ---@type fun(reason: string, onlyClass: string?)
     local armTriedAtSwing = false
     local state = logic.newState()
     local trees = {} ---@type table<integer, ABP_ScavengeableTree_C> key -> tree, for the checks in flight
@@ -67,8 +66,6 @@ function M.install(ctx)
     local lastDamageAt = {} ---@type table<integer, number> tree key -> time of its last damage
     local promptTree = nil ---@type ABP_ScavengeableTree_C? the tree whose prompt shows
     local lastPrompt = nil ---@type { tree: ABP_ScavengeableTree_C, endedAt: number }? the prompt that went off last
-    -- tree key -> time of its last fall frame; expires after FALL_KEEP_S, so a new tree at a reused address is free
-    local falling = {} ---@type table<integer, number>
     local localCharacter = nil ---@type any the character of the last local swing, for the Cause of a hit
     local lastEnded = nil ---@type Swing? the swing that K2_OnEndAbility ended last
     local hold = logic.newHold() -- the attack button state, for the restart of an interrupted hold
@@ -117,23 +114,48 @@ function M.install(ctx)
 
     -- The assist ------------------------------------------------------------------
 
-    ---@param weapon ABP_MasterMeleeWeapon_C
-    ---@param tree ABP_ScavengeableTree_C
-    ---@return boolean
-    local function treeIgnored(weapon, tree)
-        local key, found = keyOf(tree), false
-        local list = weapon.ActorsToIgnore ---@type any a UE4SS TArray
-        pcall(function()
-            list:ForEach(function(_, elem)
-                if keyOf(elem:get()) == key then found = true end
-            end)
-        end)
-        return found
+    -- The held weapon goes in the ignore list of the trace, as in the game's SurfaceTrace (the
+    -- character is ignored already as the world context). Set to false when this UE4SS build cannot
+    -- pass the list: the trace then runs with an empty list, as before.
+    local ignoreWeapon = true
+
+    -- One line trace that fills `hit`; true when it found a blocking hit.
+    local function lineTrace(ksl, character, weapon, from, to, channel, hit)
+        local color = { R = 0, G = 0, B = 0, A = 0 }
+        local function run(ignore)
+            return ksl:LineTraceSingle(
+                character,
+                from --[[@as FVector]],
+                to --[[@as FVector]],
+                channel,
+                true,
+                ignore,
+                0,
+                hit,
+                true,
+                color,
+                color,
+                0.0
+            )
+        end
+        if not ignoreWeapon then return run({}) end
+        local ok, blocking = pcall(run, { weapon })
+        if ok then return blocking end
+        -- Only a trace that works with an empty list blames the list: any other error throws here
+        -- and keeps the weapon in the list for the next trace.
+        local result = run({})
+        ignoreWeapon = false
+        warnOnce(
+            "trace ignore",
+            "the trace cannot ignore the weapon, it uses an empty ignore list: " .. tostring(blocking)
+        )
+        return result
     end
 
-    -- A line trace from the camera that hits the tree (look direction, then the stump). A Lua trace
-    -- gives the hit component in HitObjectHandle.ReferenceObject, and HitCheck finds no actor there:
-    -- the tree actor goes in, as in the game's own melee hits.
+    -- A line trace from the camera that hits the tree (look direction, then the stump). The length is
+    -- the prompt range, longer than the game's own swing trace. A Lua trace gives the hit component in
+    -- HitObjectHandle.ReferenceObject, and HitCheck finds no actor there: the tree actor goes in, as in
+    -- the game's own melee hits.
     ---@param character ABP_SGKMasterCharacter_C
     ---@param weapon ABP_MasterMeleeWeapon_C
     ---@param tree ABP_ScavengeableTree_C
@@ -145,7 +167,6 @@ function M.install(ctx)
         local fwd = cam:GetForwardVector() --[[@as Pos]]
         local treeKey = keyOf(tree)
         local channel = weapon.MeleeTraceChannel
-        local color = { R = 0, G = 0, B = 0, A = 0 }
         local ends = {
             {
                 X = from.X + fwd.X * TRACE_LENGTH_CM,
@@ -160,20 +181,7 @@ function M.install(ctx)
         for _, to in ipairs(ends) do
             ---@type any the FHitResult that the trace fills
             local hit = {}
-            local blocking = ksl:LineTraceSingle(
-                character,
-                from --[[@as FVector]],
-                to --[[@as FVector]],
-                channel,
-                true,
-                {},
-                0,
-                hit,
-                true,
-                color,
-                color,
-                0.0
-            )
+            local blocking = lineTrace(ksl, character, weapon, from, to, channel, hit)
             local ref = try(function()
                 return hit.HitObjectHandle.ReferenceObject:Get()
             end)
@@ -185,7 +193,6 @@ function M.install(ctx)
             end
             if blocking and keyOf(owner) == treeKey then
                 local handle = hit.HitObjectHandle ---@type any
-                handle.Actor = tree
                 handle.ReferenceObject = tree
                 return hit
             end
@@ -213,13 +220,11 @@ function M.install(ctx)
         ---@cast tree ABP_ScavengeableTree_C
         ---@cast weapon ABP_MasterMeleeWeapon_C
         ---@cast character ABP_SGKMasterCharacter_C
-        local fellAt = falling[swing.target]
-        if fellAt and os.clock() - fellAt < FALL_KEEP_S then
-            trace("swing " .. swing.n .. " no assist: the tree is falling")
-            return
-        end
-        if treeIgnored(weapon, tree) then
-            trace("swing " .. swing.n .. " no assist: the weapon hit the tree already")
+        local scavenged = try(function()
+            return tree.bScavenged
+        end)
+        if logic.treeDown(scavenged) then
+            trace("swing " .. swing.n .. " no assist: the tree is down (bScavenged=" .. tostring(scavenged) .. ")")
             return
         end
         local hit = traceTree(character, weapon, tree)
@@ -461,14 +466,6 @@ function M.install(ctx)
         { class = TREE_CLASS, fn = "AUTHORITY_HandleDamaged", callback = onTreeDamaged },
         {
             class = TREE_CLASS,
-            fn = "Make Tree Fall",
-            callback = function(self)
-                local key = keyOf(self:get())
-                if key then falling[key] = os.clock() end
-            end,
-        },
-        {
-            class = TREE_CLASS,
             fn = "HandleLookAtStarted",
             callback = function(self)
                 promptTree = self:get()
@@ -490,10 +487,19 @@ function M.install(ctx)
         return armedCount == #HOOKS
     end
 
-    armAll = function(reason)
+    local function treesArmed()
+        for _, h in ipairs(HOOKS) do
+            if h.class == TREE_CLASS and not h.armed then return false end
+        end
+        return true
+    end
+
+    -- onlyClass limits the arming to the hooks of one class. A class that is not in memory costs a
+    -- scan of all objects in StaticFindObject, so a caller that knows which class loaded passes it.
+    armAll = function(reason, onlyClass)
         if armedCount == #HOOKS then return end
         for _, h in ipairs(HOOKS) do
-            if not h.armed then
+            if not h.armed and (onlyClass == nil or h.class == onlyClass) then
                 local path = classPath(h.class)
                 if path then
                     h.armed = true
@@ -515,7 +521,6 @@ function M.install(ctx)
             lastPrompt = nil
             lastEnded = nil
             lastDamageAt = {}
-            falling = {}
             armAll("map load")
         end))
     end)
@@ -528,6 +533,25 @@ function M.install(ctx)
         end))
     end)
     if not ok then warnOnce("ability watcher", "hit assist watcher failed: " .. tostring(err)) end
+
+    -- The tree class can load after the map load and after the first swing; a native parent tells
+    -- when a tree (or a rock or a bush) appears. Only a new tree arms, and only the tree hooks: its
+    -- class is then in memory, so the lookup never misses (a miss scans all objects). One arm call
+    -- waits at a time, so a streaming burst queues one, not one per object. After the tree hooks
+    -- arm, each new object costs one check.
+    local treesDone, treeArmQueued = false, false
+    ok, err = pcall(NotifyOnNewObject, "/Script/Permafrost.Scavengeable", function(obj)
+        if treesDone or treeArmQueued then return end
+        if not logic.isTree(classOf(obj)) then return end
+        treesDone = treesArmed()
+        if treesDone then return end
+        treeArmQueued = true
+        ExecuteInGameThread(guard("hit assist arm", function()
+            treeArmQueued = false
+            armAll("tree seen", TREE_CLASS)
+        end))
+    end)
+    if not ok then warnOnce("tree watcher", "hit assist tree watcher failed: " .. tostring(err)) end
 end
 
 return M

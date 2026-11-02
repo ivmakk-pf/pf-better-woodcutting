@@ -32,6 +32,25 @@ function M.inRange(cutterPos, stumpPos, rangeM)
     return distSq(cutterPos, stumpPos) <= range * range
 end
 
+-- The first pass of the nearby scan: the logs ({ key, pos, ... }) within rangeM of pickedPos, not
+-- the picked log itself. It needs only the position, so the other reads run only for these logs.
+---@generic T: { key: any, pos: Pos }
+---@param pickedPos Pos
+---@param pickedKey any
+---@param logs T[]
+---@param rangeM number
+---@return T[]
+function M.logsInRange(pickedPos, pickedKey, logs, rangeM)
+    local out = {}
+    if rangeM <= 0 then return out end
+    local range = rangeM * CM_PER_M
+    local limit = range * range
+    for _, entry in ipairs(logs) do
+        if entry.key ~= pickedKey and distSq(pickedPos, entry.pos) <= limit then out[#out + 1] = entry end
+    end
+    return out
+end
+
 -- The entries of logs ({ pos, collected, pending, ... }) within rangeM of pickedPos, nearest first.
 -- Collected and pending logs are skipped. A range of 0 gives none.
 ---@generic T: LogEntry
@@ -57,6 +76,20 @@ function M.nearbyLogs(pickedPos, logs, rangeM)
         out[i] = item.entry
     end
     return out
+end
+
+-- The logs of one break: the tree spawns each log with itself as the owner. A log with no owner
+-- (one loaded from a save) or another owner is dropped.
+---@generic T
+---@param entries { log: T, ownerKey: integer? }[]
+---@param treeKey integer?
+---@return T[] kept, integer dropped
+function M.logsOfTree(entries, treeKey)
+    local kept = {}
+    for _, e in ipairs(entries) do
+        if treeKey ~= nil and e.ownerKey == treeKey then kept[#kept + 1] = e.log end
+    end
+    return kept, #entries - #kept
 end
 
 -- The result of one pickup call, from the log state after it.

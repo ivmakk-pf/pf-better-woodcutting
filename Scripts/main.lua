@@ -1,7 +1,7 @@
 -- BetterWoodcutting: puts the wood of a felled tree into the inventory of the player who cut it (log_pickup),
 -- and gives an axe swing at a tree that does not hit one hit through the game's own RPC (hit_assist).
 local MOD = "BetterWoodcutting"
-local VERSION = "1.0.0"
+local VERSION = "1.0.1"
 
 ---@class FeatureContext
 ---@field config table<string, any> the validated settings of config.lua
@@ -82,19 +82,22 @@ local function guard(key, fn)
     end
 end
 
+-- The full path of each class that a feature hooks, from the game dump (game/blueprints/).
+local CLASS_PATHS = {
+    GA_Attack_MeleePrimary_C = "/Game/Permafrost/Blueprints/GAS/GameplayAbilities/Items/GA_Attack_MeleePrimary.GA_Attack_MeleePrimary_C",
+    BP_MasterMeleeWeapon_C = "/Game/SurvivalGameKitV2/Blueprints/Items/HoldableItems/BP_MasterMeleeWeapon.BP_MasterMeleeWeapon_C",
+    BP_ScavengeableTree_C = "/Game/Permafrost/Blueprints/Interactions/Scavengable/BP_ScavengeableTree.BP_ScavengeableTree_C",
+    BP_TrunkPart_C = "/Game/Permafrost/Blueprints/Interactions/LooseResource/Wood/BP_TrunkPart.BP_TrunkPart_C",
+}
+
+-- A hash lookup of the full path, not a walk of the object array: cheap also while the class is not loaded.
 local function classPath(short)
-    for _, kind in ipairs({ "BlueprintGeneratedClass", false }) do
-        local cls = try(function()
-            return FindObject(kind or nil, short)
-        end)
-        if valid(cls) then
-            local full = try(function()
-                return cls:GetFullName()
-            end) or ""
-            local path = full:match("^%S+ (/.+)$")
-            if path and path:sub(-#short) == short then return path end
-        end
-    end
+    local path = CLASS_PATHS[short]
+    if not path then return nil end
+    local cls = try(function()
+        return StaticFindObject(path)
+    end)
+    if valid(cls) then return path end
     return nil
 end
 

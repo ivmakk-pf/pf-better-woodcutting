@@ -4,13 +4,13 @@
 -- In this UE4SS build a Blueprint hook callback runs after the function body, and a
 -- second (post) callback never runs. The code below relies on that order.
 local logic = require("bw_log_pickup_logic")
+local isTree = require("bw_hit_assist_logic").isTree
 
 local M = {}
 
 local TREE_CLASS = "BP_ScavengeableTree_C"
 local LOG_CLASS = "BP_TrunkPart_C"
 local PICKUP_DELAY_MS = 200 -- after Custom Mining & Woodcutting Yield changes the wood (one frame)
-local BREAK_WINDOW_S = 0.1 -- logs made in the same break call appear right before its callback
 local RECENT_KEEP_S = 0.5
 
 ---@param ctx FeatureContext
@@ -24,6 +24,16 @@ function M.install(ctx)
         return try(function()
             return obj:GetFName():ToString()
         end) or "?"
+    end
+
+    -- The address keys a game object across the different Lua wrappers; nil for an invalid object.
+    ---@param obj any
+    ---@return any
+    local function keyOf(obj)
+        if not valid(obj) then return nil end
+        return try(function()
+            return obj:GetAddress()
+        end)
     end
 
     -- nil when the read fails: check the result with valid() before use.
@@ -127,7 +137,8 @@ function M.install(ctx)
 
     -- The pickup ----------------------------------------------------------------
 
-    -- The game's own pickup path: BeginInteraction checks SGK AllowInteraction and sets bCollected.
+    -- The game's own pickup path: BeginInteraction (BP_InteractionBase) stops at a lock and calls
+    -- StartInteraction; the log's AUTHORITY_HandleStartInteraction sets bCollected and adds the wood.
     ---@param lg ABP_TrunkPart_C
     ---@param character AActor
     ---@return "picked up"|"shown again"
@@ -201,12 +212,25 @@ function M.install(ctx)
         if not try(function()
             return tree:HasAuthority()
         end) then return end
+        -- The tree spawns each log of the break with itself as the owner. The other logs stay in
+        -- `recent`: they can belong to another tree that breaks in the same moment.
+        -- A log of this break appeared just before this call: an older log (one loaded with the
+        -- save) is dropped without a read, so the many contacts of a falling trunk stay cheap.
+        local treeKey = keyOf(tree)
         local now = os.clock()
-        local caught = {} ---@type ABP_TrunkPart_C[]
+        local entries, rest = {}, {}
         for _, entry in ipairs(recent) do
-            if now - entry.t <= BREAK_WINDOW_S and valid(entry.log) then caught[#caught + 1] = entry.log end
+            if now - entry.t <= RECENT_KEEP_S and valid(entry.log) then
+                local ownerKey = keyOf(try(function()
+                    return entry.log:GetOwner()
+                end))
+                entries[#entries + 1] = { log = entry.log, ownerKey = ownerKey }
+                if ownerKey ~= treeKey then rest[#rest + 1] = entry end
+            end
         end
-        recent = {}
+        recent = rest
+        local caught, dropped = logic.logsOfTree(entries, treeKey) ---@type ABP_TrunkPart_C[], integer
+        trace(string.format("break tree=%s logs of the tree=%d other logs=%d", nameOf(tree), #caught, dropped))
         if #caught == 0 then return end
 
         local cutter = cutterOf(tree)
@@ -263,7 +287,7 @@ function M.install(ctx)
         if not try(function()
             return picked:HasAuthority()
         end) then return end
-        local pickedName = nameOf(picked)
+        local pickedKey = keyOf(picked)
         local pos = logPos(picked)
         local inv = try(function()
             return picked["Player Inventory"]
@@ -280,24 +304,20 @@ function M.install(ctx)
         -- Deferred: the game is still inside its own interaction of the picked log.
         ExecuteInGameThread(guard("nearby", function()
             local start = os.clock()
-            local entries = {}
+            -- The position of each log first; the name and the state only of the logs in range.
+            local placed = {}
             local all = FindAllOf(LOG_CLASS) or {} ---@type ABP_TrunkPart_C[]
             for _, lg in ipairs(all) do
-                local name = nameOf(lg)
-                if name ~= pickedName and valid(lg) then
-                    local p = logPos(lg)
-                    if p then
-                        entries[#entries + 1] = {
-                            log = lg,
-                            pos = p,
-                            name = name,
-                            pending = pending[name],
-                            collected = try(function()
-                                return lg.bCollected
-                            end) == true,
-                        }
-                    end
-                end
+                local p = valid(lg) and logPos(lg) or nil
+                if p then placed[#placed + 1] = { log = lg, key = keyOf(lg), pos = p } end
+            end
+            local entries = logic.logsInRange(pos, pickedKey, placed, config.nearby_range_m)
+            for _, entry in ipairs(entries) do
+                local lg = entry.log
+                entry.pending = pending[nameOf(lg)]
+                entry.collected = try(function()
+                    return lg.bCollected
+                end) == true
             end
             local nearby = logic.nearbyLogs(pos, entries, config.nearby_range_m)
             local ms = (os.clock() - start) * 1000
@@ -306,7 +326,7 @@ function M.install(ctx)
                 if pickup(entry.log, character) ~= "picked up" then break end
                 taken = taken + 1
             end
-            trace(string.format("nearby walk %.2fms logs=%d inRange=%d picked=%d", ms, #entries, #nearby, taken))
+            trace(string.format("nearby walk %.2fms logs=%d inRange=%d picked=%d", ms, #placed, #nearby, taken))
         end))
     end
 
@@ -344,9 +364,11 @@ function M.install(ctx)
             RegisterHook,
             path .. ":Break Trunk Into Pieces",
             guard("break", function(self)
-                -- The break call repeats on each frame for 1-3 s before the logs appear, so its
-                -- first call arms the log watcher in time when the class was not loaded before.
-                -- One lookup per tree, not per frame, when the class is missing (a game update).
+                -- The break function is bound to the trunk's OnComponentHit. It runs at each contact
+                -- of the falling trunk and returns early for a player, a tree, or the trunk itself;
+                -- the first other contact spawns the logs and unbinds it. Its early calls arm the log
+                -- watcher when the log class was not loaded before. One lookup per tree, not per
+                -- contact, when the class is missing (a game update).
                 if not (armed.watcher and armed.collect) then
                     local tree = nameOf(self:get())
                     if tree ~= lastTree then
@@ -371,10 +393,19 @@ function M.install(ctx)
         end))
     end)
 
-    -- A tree class can load after the map load; a native parent tells when one appears.
-    local ok, err = pcall(NotifyOnNewObject, "/Script/Permafrost.Scavengeable", function()
-        if armed.tree then return end
+    -- A tree class can load after the map load; a native parent tells when one appears. Only a new
+    -- tree arms (a lookup of a class that is not in memory scans all objects), and one arm call
+    -- waits at a time, so a streaming burst queues one, not one per object.
+    local treeArmQueued = false
+    local ok, err = pcall(NotifyOnNewObject, "/Script/Permafrost.Scavengeable", function(obj)
+        if armed.tree or treeArmQueued then return end
+        local class = try(function()
+            return obj:GetClass():GetFName():ToString()
+        end)
+        if not isTree(class) then return end
+        treeArmQueued = true
         ExecuteInGameThread(guard("arm tree", function()
+            treeArmQueued = false
             armTree("tree seen")
         end))
     end)
