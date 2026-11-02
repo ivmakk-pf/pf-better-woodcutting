@@ -28,23 +28,17 @@ Tested only in single player. In co-op, only the host needs the mod: the log pic
 ## Requirements
 
 - Permafrost (Early Access), the update of 30 October 2026 or later.
-- [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases) 3.0.1 or later. Vortex installs it for you.
+- [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/experimental-latest), the experimental build. The mod is tested with it, not with the older 3.0.1 release.
 
 ## Installation
 
-**Vortex (recommended):**
-
-1. Click **Vortex** at the top of the [Nexus page](https://www.nexusmods.com/permafrost/mods/39) *(needs the [Permafrost Vortex Extension](https://www.nexusmods.com/site/mods/2466), which also installs UE4SS)*.
-
-**Manual installation:**
-
-1. Install [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases).
+1. Install UE4SS, if you do not have it yet: on the [UE4SS experimental page](https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/experimental-latest), download the UE4SS zip (for example `UE4SS_v3.0.1-1196-g236adf26.zip`). Extract it into the `Permafrost\Binaries\Win64` folder inside the game folder.
 2. Extract this mod's zip into the game folder (the folder with Permafrost.exe). The mod lands in Permafrost\Binaries\Win64\ue4ss\Mods. Full path example:
    `C:\Program Files (x86)\Steam\steamapps\common\Permafrost\Permafrost\Binaries\Win64\ue4ss\Mods\BetterWoodcutting`
 
 ## Uninstall
 
-In Vortex, remove the mod on the Mods page. After a manual install, delete the `BetterWoodcutting` folder from the `ue4ss\Mods` folder.
+Delete the `BetterWoodcutting` folder from the `ue4ss\Mods` folder.
 
 ## Configuration
 
