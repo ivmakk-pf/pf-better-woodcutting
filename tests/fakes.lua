@@ -140,9 +140,12 @@ end
 ---@return BwFakeEnv
 function M.install(opts)
     opts = opts or {}
-    saved = {}
-    for _, name in ipairs(NAMES) do
-        saved[name] = rawget(_G, name)
+    -- A second install before restore keeps the first snapshot: it holds the real globals.
+    if not saved then
+        saved = {}
+        for _, name in ipairs(NAMES) do
+            saved[name] = rawget(_G, name)
+        end
     end
     local env = {
         hooks = {},
@@ -164,6 +167,7 @@ function M.install(opts)
     end
     env.failHook = opts.failHook
     local ids = 0
+    local callbacks = {} ---@type table<string, function[]> each callback of a hook path, in order
 
     -- The globals go in through a loop with a variable key, so LuaLS keeps the UE4SS types of
     -- these names (a literal `_G.X = spy` or `rawset(_G, "X", spy)` would change them).
@@ -173,7 +177,18 @@ function M.install(opts)
             if env.failHook and path:sub(-#env.failHook) == env.failHook then
                 error("No UFunction with the specified name was found: " .. path)
             end
-            env.hooks[path] = fn
+            -- UE4SS runs each callback of a path; the last value that is not nil replaces the return.
+            local registered = callbacks[path] or {}
+            callbacks[path] = registered
+            registered[#registered + 1] = fn
+            env.hooks[path] = function(...)
+                local result = nil
+                for _, callback in ipairs(registered) do
+                    local value = callback(...)
+                    if value ~= nil then result = value end
+                end
+                return result
+            end
             env.posts[path] = post
             ids = ids + 2
             return ids - 1, ids

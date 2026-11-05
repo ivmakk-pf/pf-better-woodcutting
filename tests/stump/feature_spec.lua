@@ -251,6 +251,16 @@ describe("stump removal", function()
             end
         )
 
+        it("starts no load when neither a player nor the first tree is still there", function()
+            env.objects[WOOD] = nil
+            env.holdGameThread = true
+            local tree = env.spawn(newTree("Gone", 100))
+            tree.destroyed = true
+            env.runGameThread()
+            assert.are.equal(0, w.loads)
+            assert.are.equal(0, w.classLoads)
+        end)
+
         it("starts the latent load of the wood item at the first tree when it is not in memory", function()
             env.objects[WOOD] = nil
             worldLoad()

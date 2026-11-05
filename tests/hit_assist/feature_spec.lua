@@ -370,6 +370,13 @@ describe("hit assist", function()
             assert.are.equal(0, #w.serverHits)
         end)
 
+        it("at a stump that the swing trace finds is not restarted while the button is held", function()
+            w.tree.CurrentHealth = 0
+            key(true)
+            interrupt(w.tree) -- no look-at: the swing trace finds the stump
+            assert.are.equal(0, w.restarts)
+        end)
+
         it("of the hit window toggle adds no hit", function()
             local toggle = env.hooks[WEAPON .. "SGK MeleeCollisionToggle"]
             swing(w.tree)

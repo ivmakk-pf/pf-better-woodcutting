@@ -75,6 +75,18 @@ end
 
 -- Hooks -----------------------------------------------------------------------
 
+-- True for a tree whose health is 0 or less (a stump, or a tree that falls), and for a failed read.
+-- The stump removal gives a stump a longer prompt reach, so a stump can catch the look-at in front of
+-- the tree that the player chops: it is never the prompt tree or the target of a swing.
+---@param tree any
+---@return boolean
+local function isDown(tree)
+    local health = ctx.try(function()
+        return tree.CurrentHealth
+    end)
+    return type(health) ~= "number" or health <= 0
+end
+
 -- The last prompt tree when the player stands close and faces it (against the trunk the prompt is
 -- off and the trace finds nothing), else nil.
 ---@param character ABP_SGKMasterCharacter_C
@@ -120,6 +132,8 @@ local function targetOf(ability, character, traceActor)
         return tree:GetRequiredToolType()
     end)
     if not logic.rightTool(toolType, required) then return nil end
+    -- A stump is never a swing target: no check, no assist, and no restart of a held attack.
+    if isDown(tree) then return nil end
     return tree
 end
 
@@ -279,18 +293,6 @@ local function onCollisionToggle(_, traceOn)
             open and string.format(" (swing %d +%.2fs)", open.n, os.clock() - open.startedAt) or " (no swing)"
         )
     )
-end
-
--- True for a tree whose health is 0 or less (a stump, or a tree that falls), and for a failed read.
--- The stump removal gives a stump a longer prompt reach, so a stump can catch the look-at in front of
--- the tree that the player chops: it is never the prompt tree of a swing.
----@param tree any
----@return boolean
-local function isDown(tree)
-    local health = ctx.try(function()
-        return tree.CurrentHealth
-    end)
-    return type(health) ~= "number" or health <= 0
 end
 
 local function onLookAtStarted(self)

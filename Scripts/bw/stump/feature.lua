@@ -384,7 +384,10 @@ local function armTree(tree)
     hookTree("ReceiveBeginPlay", onSetup)
     ctx.trace("stump hooks armed (tree seen)")
     local item, class = woodInMemory()
-    if not (item and class) then startWoodLoad(ctx.valid(player()) and player() or tree) end
+    -- The world context of the latent loads: the player, else the first tree when it is still there.
+    -- With neither, the first hold that waits for the wood starts the loads.
+    local context = player() or (ctx.valid(tree) and tree or nil)
+    if context and not (item and class) then startWoodLoad(context) end
 end
 
 -- The tree watcher stays for the whole session: each new tree goes into the list of the load check,
