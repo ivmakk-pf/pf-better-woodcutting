@@ -16,7 +16,7 @@ All notable changes to this mod are documented in this file. The format is based
 
 ### Fixed
 
-- The game no longer crashes at random while the world loads or after a bed travel.
+- The game no longer crashes at random while the world loads, for example when you load a save or when new areas load as you travel.
 - Hit assist works from your first tree swing after you load a save, also when your first swings hit a rock or nothing.
 - The hit assist leaves tree stumps alone, also after you load a save.
 - When two trees fall at almost the same moment, the logs of each tree go to the player who cut that tree.
