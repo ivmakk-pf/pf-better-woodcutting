@@ -13,7 +13,7 @@ I love archery and chopping trees in games, and in Permafrost arrows need a lot 
 - **Log pickup**: when a tree you cut breaks into logs, they go straight into your inventory, if you stand within 15 m of the stump. You get the same Wood as by hand. If the inventory is full, the rest stays on the ground.
 - **Nearby logs**: pick up one log by hand, and the other logs within 5 m come with it.
 - **Hit assist**: your axe swings now deal damage even from the edge of reach or right against the tree. Each swing still gives one normal hit.
-- **Stump removal**: with an axe in hand, look at a tree stump from up to 2.5 m away and hold the interact key (F by default) at the "Remove stump" prompt, as you hold it to skin an animal. When the progress fills (about 3 s), the stump goes and you get the Wood of one log. What does not fit in your inventory drops, as for a log you pick up. The stump stays gone after you load the save.
+- **Stump removal**: with an axe in hand, hold the interact key (F by default) at a tree stump for about 3 s. The stump goes for good, also after you load the save, and you get the Wood of one log.
 
 ## Save safety
 
