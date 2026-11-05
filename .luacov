@@ -1,0 +1,9 @@
+-- luacov settings: the coverage of every file in Scripts/, also of a file that no test loads.
+-- LUACOV_OUT sets the output folder, so a test run can keep the coverage files out of the mod.
+local out = os.getenv("LUACOV_OUT") or "."
+return {
+    include = { "Scripts/" },
+    includeuntestedfiles = { "Scripts" },
+    statsfile = out .. "/luacov.stats.out",
+    reportfile = out .. "/luacov.report.out",
+}

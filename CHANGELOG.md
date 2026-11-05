@@ -4,16 +4,22 @@ All notable changes to this mod are documented in this file. The format is based
 
 ## [Unreleased]
 
-## [1.0.1] - 2026-11-02
+## [1.1.0] - 2026-11-05
 
-### Fixed
+### Added
 
-- Hit assist works from your first tree swing after you load a save, also when your first swings hit a rock or nothing.
-- When two trees fall at almost the same moment, the logs of each tree go to the player who cut that tree.
+- Stump removal: with an axe in hand, hold the interact key at a tree stump to remove it. You get the Wood of one log, and the stump stays gone after you load the save.
 
 ### Changed
 
 - Less work while a tree falls and when you pick up a log by hand.
+
+### Fixed
+
+- The game no longer crashes at random while the world loads, for example when you load a save or when new areas load as you travel.
+- Hit assist works from your first tree swing after you load a save, also when your first swings hit a rock or nothing.
+- The hit assist leaves tree stumps alone, also after you load a save.
+- When two trees fall at almost the same moment, the logs of each tree go to the player who cut that tree.
 
 ## [1.0.0] - 2026-10-31
 

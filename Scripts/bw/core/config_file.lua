@@ -1,5 +1,5 @@
 -- Loads config.lua from the mod folder, and writes it with the defaults when it is missing.
-local config_logic = require("bw_config_logic")
+local config_logic = require("bw.core.config_logic")
 
 local M = {}
 
@@ -31,21 +31,30 @@ function M.text(schema)
     return table.concat(lines, "\n") .. "\n"
 end
 
--- <...>\Mods\<Name>\ from the path of this file (<...>\Mods\<Name>\Scripts\bw_config_file.lua).
-local function modFolder()
-    local source = debug.getinfo(1, "S").source:gsub("^@", "")
-    return source:match("^(.*[/\\])Scripts[/\\][^/\\]+$")
+-- <...>\Mods\<Name>\ from the path of a file in <...>\Mods\<Name>\Scripts\ or in a subfolder of it.
+-- The greedy .* takes the last Scripts folder of the path.
+---@param source string a file path, or a chunk name that starts with "@"
+---@return string?
+function M.folderOf(source)
+    return (source:gsub("^@", "")):match("^(.*[/\\])Scripts[/\\].+$")
+end
+
+-- The mod folder from the path of this file. UE4SS loads it by its full path.
+---@return string?
+function M.modFolder()
+    return M.folderOf(debug.getinfo(1, "S").source)
 end
 
 -- Returns the validated settings. Logs each problem through log; never overwrites a config file.
 ---@param schema ConfigEntry[]
 ---@param log fun(message: string)
+---@param folder string? the mod folder with a trailing slash (the specs give a temp folder)
 ---@return table<string, any>
-function M.load(schema, log)
+function M.load(schema, log, folder)
     local warn = function(key, message)
         log("WARN config " .. key .. ": " .. message)
     end
-    local folder = modFolder()
+    folder = folder or M.modFolder()
     if not folder then
         log("WARN config: mod folder not found, using the defaults")
         return config_logic.validate({}, schema, warn)

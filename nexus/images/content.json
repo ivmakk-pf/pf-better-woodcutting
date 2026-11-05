@@ -3,7 +3,7 @@
     "name": "Better Woodcutting",
     "author": "ivmakk0",
     "category": "Gameplay",
-    "summary": "Feel like a true lumberjack: fell a tree and its Wood lands straight in your backpack."
+    "summary": "Feel like a true lumberjack: fell a tree, its Wood lands in your backpack, and the stump comes out."
   },
   "thumbnail": {
     "out": "00-thumbnail.jpg",
@@ -22,7 +22,7 @@
       {
         "icon": "UI/Journal/SkillProgression/Assets/T_Skill_Axes_Icon",
         "iconSize": 96,
-        "caption": [{ "text": "Every chop" }, { "text": "matters", "accent": true }]
+        "caption": [[{ "text": "Clear " }, { "text": "stumps", "accent": true }], { "text": "around your base" }]
       }
     ]
   }

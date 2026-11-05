@@ -100,4 +100,29 @@ function M.pickupResult(after)
     return "shown again"
 end
 
+-- The log list: each log that the game made, keyed by its address. A new log at a used key
+-- replaces the entry (the old log is gone, and the game reused its address).
+---@param list table<any, any>
+---@param key any
+---@param log any
+function M.addLog(list, key, log)
+    list[key] = log
+end
+
+-- The logs whose check passes; each entry that fails is dropped from the list.
+---@param list table<any, any>
+---@param check fun(key: any, log: any): boolean true while the entry is still the same log
+---@return any[]
+function M.liveLogs(list, check)
+    local live = {}
+    for key, log in pairs(list) do
+        if check(key, log) then
+            live[#live + 1] = log
+        else
+            list[key] = nil
+        end
+    end
+    return live
+end
+
 return M

@@ -5,7 +5,7 @@ Makes the install zip dist/BetterWoodcutting-<version>.zip.
 .DESCRIPTION
 The version comes from the VERSION constant in Scripts/main.lua. The zip holds the path from the game root
 (Permafrost/Binaries/Win64/ue4ss/Mods/BetterWoodcutting/), so a player extracts it in the game folder. It holds
-Scripts/ and an empty enabled.txt, never config.lua: the mod writes that file at the first start.
+Scripts/ with its subfolders and an empty enabled.txt, never config.lua: the mod writes that file at the first start.
 
 .EXAMPLE
 ./package.ps1
@@ -22,7 +22,7 @@ $stage = Join-Path ([System.IO.Path]::GetTempPath()) "$mod-package-$([guid]::New
 $modDir = Join-Path $stage "Permafrost/Binaries/Win64/ue4ss/Mods/$mod"
 try {
     New-Item -ItemType Directory -Force -Path (Join-Path $modDir 'Scripts') | Out-Null
-    Copy-Item -Path (Join-Path $PSScriptRoot 'Scripts/*.lua') -Destination (Join-Path $modDir 'Scripts')
+    Copy-Item -Path (Join-Path $PSScriptRoot 'Scripts/*') -Destination (Join-Path $modDir 'Scripts') -Recurse
     New-Item -ItemType File -Path (Join-Path $modDir 'enabled.txt') | Out-Null
 
     $dist = Join-Path $PSScriptRoot 'dist'

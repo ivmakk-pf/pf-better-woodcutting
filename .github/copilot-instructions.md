@@ -4,23 +4,28 @@ This repo is a UE4SS Lua mod for *Permafrost*, a co-op Unreal Engine 5.4 game. T
 
 ## This mod
 
-BetterWoodcutting has two features, each in its own file pair and each behind a config switch:
+BetterWoodcutting has three features, each in its own folder of `Scripts/bw/` and each behind a config switch. In each folder, `feature.lua` talks to the game and `logic.lua` is game-free. `Scripts/bw/core/` holds the config and the shared context, and `Scripts/bw/paths.lua` the full class paths. The specs in `tests/` run with busted and fake UE4SS globals (`tests/fakes.lua`), with an 80 % coverage limit.
 
-- **Log pickup** (`bw_log_pickup.lua`, `bw_log_pickup_logic.lua`): when a felled tree (`BP_ScavengeableTree_C`) breaks into logs (`BP_TrunkPart_C`), it picks up each log for the player who cut the tree through the game's own pickup (`BeginInteraction`), so the wood amount stays the game's. Host side: every hook acts only where the tree or log has authority. Flag any wood grant that bypasses the game's pickup (for example a direct `AddItemAmount`), and any change of `Wood Loot Count`.
-- **Hit assist** (`bw_hit_assist.lua`, `bw_hit_assist_logic.lua`): an axe swing (`GA_Attack_MeleePrimary_C`) at a tree with no hit gets one hit through the weapon's own `Server Hit Check`, and a held attack that the game interrupts at a tree is restarted through the weapon's own `SGK ClientPrimaryAction(true)`, at most `MAX_RESTARTS` times in a row. It acts only for the locally controlled character with authority (solo and host).
+- **Log pickup** (`bw/log_pickup/`): when a felled tree (`BP_ScavengeableTree_C`) breaks into logs (`BP_TrunkPart_C`), it picks up each log for the player who cut the tree through the game's own pickup (`BeginInteraction`), so the wood amount stays the game's. The nearby pickup reads a log list that the log watcher fills, never `FindAllOf`. Host side: every hook acts only where the tree or log has authority. Flag any log wood grant that bypasses the game's pickup (for example a direct `AddItemAmount`), and any change of `Wood Loot Count`.
+- **Hit assist** (`bw/hit_assist/`, with the trace and the hit in `assist.lua`): an axe swing (`GA_Attack_MeleePrimary_C`) at a tree with no hit gets one hit through the weapon's own `Server Hit Check`, and a held attack that the game interrupts at a tree is restarted through the weapon's own `SGK ClientPrimaryAction(true)`, at most `MAX_RESTARTS` times in a row. It acts only for the locally controlled character with authority (solo and host), and never for a tree whose health is 0 or less (a stump).
+- **Stump removal** (`bw/stump/`): with an axe in hand, `IsInteractionAllowed` of a stump (health exactly 0) says yes, and the stump's own action becomes a timed action of the interact key. At the end of the game's hold, a pre hook on the native `InteractionInterface:FinalizeInteraction` marks the stump (`CurrentHealth = -1`, kept in the save), gives the wood of one log with `AddItemAmount`, and hides the stump. The load hide hides each marked stump again after the game's own setup of the tree.
 
 Invariants:
 
 - **No game call inside a hook callback.** Every game call that the hit assist makes (`Server Hit Check`, `ResetSwing`, the restart key-down) runs from `ExecuteInGameThread` or `ExecuteWithDelay`. A `Server Hit Check` call made directly inside a montage event callback froze the game. Flag any new direct call.
 - **One hit per swing.** A check acts only for the newest swing, never within `MIN_HIT_INTERVAL_S` of the tree's last damage, and never when the game's own hit landed after the swing start. Flag a change that can give a swing a second hit.
-- **Trees only.** A swing at anything but a tree (a rock, an animal) is never assisted or restarted.
+- **Trees only.** A swing at anything but a standing tree (a rock, an animal, a stump) is never assisted or restarted.
 - **Blueprint hook order.** In this UE4SS build a Blueprint hook callback runs after the function body, so a nested call's callback runs first. The swing tracking relies on this order.
+- **FinalizeInteraction reads no parameter.** The game calls it with no parameter buffer, and a `get()` there crashed the game natively. The hook acts on the stump of the last look-at, when the HUD's current action is `BW_RemoveStump`. Flag any parameter read in that callback.
+- **The wood item is in memory before `AddItemAmount`.** The call loads its item synchronously, which can deadlock while the world streams. Flag a removal path without the `Conv_SoftObjectReferenceToObject` check, and any synchronous load.
+- **No player lookup.** `UEHelpers.GetPlayer` walks the object array (`FindAllOf`). The stump feature takes the local player from its character watcher, and the hit assist from the ability. Flag a new `GetPlayer` or `GetPlayerController` call.
 
 ## UE4SS traps
 
 - **Object life.** A UObject can be destroyed at any time. Flag a stored object reference that is used without an `IsValid()` check.
 - **Hook callbacks must not break the game.** Each callback body runs in `pcall`, and an error logs once. Flag a callback without `pcall`, and a log call in a per-call path with no once-only guard.
-- **Blueprint hooks.** A Blueprint UFunction (`/Game/...`) exists only after its asset loads. Flag a `RegisterHook` on a `/Game/` path at mod start with no retry or load hook.
+- **Blueprint hooks.** A Blueprint UFunction (`/Game/...`) exists only after its asset loads. A hook registers at the first moment that a live object proves its class is in memory: a new object of that class (checked by its class name), or a hook whose `self` is one. Flag a `RegisterHook` on a `/Game/` path with no such proof.
+- **Lookups need proof.** `StaticFindObject` of an object that is not in memory walks the whole object array, and `FindAllOf` and `FindFirstOf` always walk it. A walk while the world streams can read a half-made object: a native crash that `pcall` does not catch. Flag a lookup of a `/Game/` object on a timer (`LoopAsync`, `LoopInGameThreadWithDelay`, `ExecuteWithDelay`), at each map load, in a `NotifyOnNewObject` path for objects of another class, or in a per-frame hook. The safe forms: the class name or the class chain (`GetSuperStruct`) of a live object, an object from a hook parameter, and `Conv_SoftObjectReferenceToObject` of a soft reference. A `/Script/` class or `Default__` object is always in memory (a hash hit).
 - **Full paths.** `RegisterHook` and `NotifyOnNewObject` need the full path (`/Script/Permafrost.Class:Function`, `/Game/.../BP_X.BP_X_C`). Flag a short class name.
 - **Parameters.** Hook parameters are `RemoteUnrealParam`: read with `:get()`, write with `:set()`. Flag a direct use of the parameter as a value.
 - **New objects.** The properties of an object from `NotifyOnNewObject` are not set at the callback. Flag a property read in that callback with no deferral.
@@ -43,7 +48,8 @@ Invariants:
 
 ## Structure and tests
 
-- **Pure logic is separated and tested.** Logic that does not need the running game lives in a `*_logic.lua` file with no UE4SS global and no UObject, tested under `tests/`. Flag new pure logic in a hook callback, and new pure logic with no test.
+- **Pure logic is separated and tested.** Logic that does not need the running game lives in the `logic.lua` of its feature folder (`Scripts/bw/<feature>/logic.lua`), with no UE4SS global and no UObject, tested under `tests/<feature>/`. Flag new pure logic in a hook callback, and new pure logic with no test.
+- **Game-facing code has glue specs.** The specs of `feature.lua` use the fakes of `tests/fakes.lua`, which dispatch new objects along the class chain as UE4SS does and count each `/Game/` lookup and each `FindAllOf`. Run `busted` from the repo root. Flag a feature change with no spec.
 - **One function for each hook target,** named `<feature>On<Target>`.
 
 ## Release and config hygiene

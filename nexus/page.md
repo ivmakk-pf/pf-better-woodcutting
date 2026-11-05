@@ -5,4 +5,4 @@
 - Requirement: [UE4SS for Permafrost](https://www.nexusmods.com/permafrost/mods/42), added as a Nexus requirement (mod 42).
 - Vortex: installs our zip with the Permafrost Vortex Extension (checked 2026-10-31 with extension 1.0.5: `Scripts\` in `ue4ss\Mods\BetterWoodcutting\`, no `enabled.txt`, the line `BetterWoodcutting : 1` in `mods.txt`).
 - Permissions (GPL-3.0): modification and reuse allowed, credit required, a derivative stays open under the same license, no closed reuploads.
-- Main file: `BetterWoodcutting 1.0.0`, the zip `BetterWoodcutting-1.0.0.zip`.
+- Main file: `BetterWoodcutting 1.1.0`, the zip `BetterWoodcutting-1.1.0.zip`.

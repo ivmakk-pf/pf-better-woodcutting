@@ -1,0 +1,8 @@
+-- busted settings: run `busted` from the mod root.
+return {
+    default = {
+        ROOT = { "tests" },
+        pattern = "_spec",
+        lpath = "Scripts/?.lua;tests/?.lua",
+    },
+}

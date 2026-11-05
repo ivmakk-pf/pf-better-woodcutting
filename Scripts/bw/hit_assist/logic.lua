@@ -138,11 +138,14 @@ function M.needsAssist(swing, lastDamageAt, latestN, now)
 end
 
 -- Whether a tree is down: the game's bScavenged flag, set when the tree breaks (it then falls and
--- takes no damage). A failed read (nil) counts as down, so the swing stays vanilla.
+-- takes no damage), or a health of 0 or less. The save keeps the health and not the flag, so a stump
+-- after a load has bScavenged false, and a hit on it would run the fall of the tree again. A failed
+-- read (nil) counts as down, so the swing stays vanilla.
 ---@param scavenged boolean?
+---@param health number?
 ---@return boolean
-function M.treeDown(scavenged)
-    return scavenged ~= false
+function M.treeDown(scavenged, health)
+    return scavenged ~= false or health == nil or health <= 0
 end
 
 ---@param swing Swing
