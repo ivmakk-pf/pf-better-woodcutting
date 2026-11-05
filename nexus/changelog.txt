@@ -1,0 +1,9 @@
+v1.1.0 - 2026-11-05
+Added: Stump removal: with an axe in hand, hold the interact key at a tree stump to remove it. You get the Wood of one log, and the stump stays gone after you load the save.
+Fixed: The game no longer crashes at random while the world loads or after a bed travel.
+Fixed: The hit assist leaves tree stumps alone, also after you load a save.
+
+v1.0.1 - 2026-11-02
+Changed: Less work while a tree falls and when you pick up a log by hand.
+Fixed: Hit assist works from your first tree swing after you load a save, also when your first swings hit a rock or nothing.
+Fixed: When two trees fall at almost the same moment, the logs of each tree go to the player who cut that tree.

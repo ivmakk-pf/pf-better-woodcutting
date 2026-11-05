@@ -4,6 +4,17 @@ All notable changes to this mod are documented in this file. The format is based
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-05
+
+### Added
+
+- Stump removal: with an axe in hand, hold the interact key at a tree stump to remove it. You get the Wood of one log, and the stump stays gone after you load the save.
+
+### Fixed
+
+- The game no longer crashes at random while the world loads or after a bed travel.
+- The hit assist leaves tree stumps alone, also after you load a save.
+
 ## [1.0.1] - 2026-11-02
 
 ### Fixed

@@ -8,6 +8,8 @@ Every setting lives in `Permafrost\Binaries\Win64\ue4ss\Mods\BetterWoodcutting\c
 | `pickup_range_m` | `15` | `1` to `100` | How close, in metres, the player who cut the tree must be to its stump when the tree breaks into logs. Further away, the logs stay on the ground. |
 | `nearby_range_m` | `5` | `0` to `20` | When you pick up a log by hand, the other logs this close to it, in metres, come with it. `0` turns this off. |
 | `hit_assist` | `true` | `true`, `false` | Gives an axe swing at a tree that does not hit one normal hit, and starts the next swing when the game breaks off a held chop. `false` leaves the swings as in the game without the mod. |
+| `stump_removal` | `true` | `true`, `false` | With an axe in hand, a hold of the interact key at a tree stump removes it and gives the Wood of one log. `false` leaves the stumps as in the game without the mod: the stumps that you removed before show again at the next load. |
+| `stump_hold_s` | `2` | `0.5` to `10` | How long you hold the interact key to remove a stump, in seconds. The game adds about 1 s before the progress starts. |
 | `verbose` | `false` | `true`, `false` | Writes extra lines to `UE4SS.log` for troubleshooting. Keep it off in normal play. |
 
 A value outside its range applies as the nearest limit. A value of the wrong type applies as the default. When the game cannot read the file (for example after a typo), every setting applies as the default, and the file stays as it is.
